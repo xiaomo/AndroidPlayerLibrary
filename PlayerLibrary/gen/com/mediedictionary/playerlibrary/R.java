@@ -45,21 +45,25 @@ public final class R {
         public static final int seekbar_thumb_pressed=0x7f020015;
     }
     public static final class id {
-        public static final int action_settings=0x7f08000e;
-        public static final int ib_backward=0x7f080006;
-        public static final int ib_forward=0x7f080008;
-        public static final int ib_lock=0x7f080005;
-        public static final int ib_play=0x7f080007;
-        public static final int ib_size=0x7f080009;
-        public static final int ll_overlay=0x7f080001;
-        public static final int pb_loading=0x7f08000a;
-        public static final int player_surface=0x7f08000c;
-        public static final int player_surface_frame=0x7f08000b;
+        public static final int action_settings=0x7f080012;
+        public static final int ib_backward=0x7f080009;
+        public static final int ib_forward=0x7f08000b;
+        public static final int ib_lock=0x7f080008;
+        public static final int ib_play=0x7f08000a;
+        public static final int ib_size=0x7f08000c;
+        public static final int ll_overlay=0x7f080003;
+        public static final int ll_overlay_btns=0x7f080007;
+        public static final int player_surface=0x7f080010;
+        public static final int player_surface_frame=0x7f08000f;
         public static final int pv_video=0x7f080000;
-        public static final int sb_video=0x7f080003;
-        public static final int subtitles_surface=0x7f08000d;
-        public static final int tv_length=0x7f080004;
-        public static final int tv_time=0x7f080002;
+        public static final int rl_loading=0x7f08000d;
+        public static final int rl_title=0x7f080001;
+        public static final int sb_video=0x7f080005;
+        public static final int subtitles_surface=0x7f080011;
+        public static final int tv_buffer=0x7f08000e;
+        public static final int tv_length=0x7f080006;
+        public static final int tv_time=0x7f080004;
+        public static final int tv_title=0x7f080002;
     }
     public static final class layout {
         public static final int activity_main_demo=0x7f030000;

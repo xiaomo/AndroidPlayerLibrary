@@ -8,16 +8,33 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    
+        <RelativeLayout
+        android:id="@+id/rl_title"
+        android:background="#8000"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="3dp">
 
-
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:textColor="@android:color/white"
+            android:layout_centerHorizontal="true"
+            android:layout_width="wrap_content"
+            android:singleLine="true"
+            android:layout_height="wrap_content"/>
+    </RelativeLayout>
+    
     <LinearLayout
         android:id="@+id/ll_overlay"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:orientation="vertical"
         android:background="#8000"
-        android:padding="10dp">
+        android:orientation="vertical"
+        android:padding="10dp" >
 
         <LinearLayout
             android:layout_width="fill_parent"
@@ -30,8 +47,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginRight="5dp"
                 android:clickable="true"
-                android:text="00:00:000"
-                android:textColor="#ffffff"
+                android:textColor="@android:color/white"
                 android:textSize="15sp" />
 
             <SeekBar
@@ -50,29 +66,35 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dp"
                 android:clickable="true"
-                android:text="00:00:000"
-                android:textColor="#ffffff"
+                android:textColor="@android:color/white"
                 android:textSize="15sp" />
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/ll_overlay_btns"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="0dp"
+            android:layout_marginLeft="0dp"
+            android:layout_marginRight="0dp"
             android:layout_marginTop="5dp"
-            android:orientation="horizontal" >
+            android:baselineAligned="false"
+            android:orientation="horizontal"
+            android:padding="0dp" >
 
             <RelativeLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:visibility="gone"
-                android:layout_weight="1" >
+                android:layout_weight="1"
+                android:visibility="gone" >
 
                 <ImageButton
                     android:id="@+id/ib_lock"
                     android:layout_width="40dip"
                     android:layout_height="40dip"
                     android:layout_centerInParent="true"
-                    android:background="@drawable/ic_lock" />
+                    android:background="@drawable/ic_lock"
+                    android:contentDescription="@null" />
             </RelativeLayout>
 
             <RelativeLayout
@@ -85,7 +107,8 @@
                     android:layout_width="40dip"
                     android:layout_height="40dip"
                     android:layout_centerInParent="true"
-                    android:background="@drawable/ic_backward_w" />
+                    android:background="@drawable/ic_backward_w"
+                    android:contentDescription="@null" />
             </RelativeLayout>
 
             <RelativeLayout
@@ -98,7 +121,8 @@
                     android:layout_width="40dip"
                     android:layout_height="40dip"
                     android:layout_centerInParent="true"
-                    android:background="@drawable/ic_pause" />
+                    android:background="@drawable/ic_pause"
+                    android:contentDescription="@null" />
             </RelativeLayout>
 
             <RelativeLayout
@@ -111,31 +135,47 @@
                     android:layout_width="40dip"
                     android:layout_height="40dip"
                     android:layout_centerInParent="true"
-                    android:background="@drawable/ic_forward_w" />
+                    android:background="@drawable/ic_forward_w"
+                    android:contentDescription="@null" />
             </RelativeLayout>
 
             <RelativeLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:visibility="gone"
-                android:layout_weight="1" >
+                android:layout_weight="1"
+                android:visibility="gone" >
 
                 <ImageButton
                     android:id="@+id/ib_size"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_marginLeft="5dp"
-                    android:background="@drawable/ic_crop_circle" />
+                    android:layout_width="40dip"
+                    android:layout_height="40dip"
+                    android:layout_centerInParent="true"
+                    android:background="@drawable/ic_crop_circle"
+                    android:contentDescription="@null" />
             </RelativeLayout>
         </LinearLayout>
     </LinearLayout>
-    
-        <ProgressBar
-        android:id="@+id/pb_loading"
-        android:visibility="gone"
+
+    <LinearLayout
+        android:id="@+id/rl_loading"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true" />
+        android:layout_centerInParent="true"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:visibility="gone" >
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        
+        <TextView
+            android:id="@+id/tv_buffer"
+            android:layout_marginTop="2dp"
+            android:background="#8000"
+            android:textColor="@android:color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
 
 </RelativeLayout>

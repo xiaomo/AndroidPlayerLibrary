@@ -22,7 +22,9 @@ public class DemoActivity extends ListActivity implements OnItemClickListener {
 
 		items = new ArrayList<String>();
 		items.add("http://img1.peiyinxiu.com/2014121211339c64b7fb09742e2c.mp4");
+		items.add("rtmp://lm01.everyon.tv:1935/ptv/pld852");
 		items.add("rtmp://183.129.244.168/weipai/s1");
+		items.add("file:///sdcard/mix.mp4");
 
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items);
 		setListAdapter(adapter);

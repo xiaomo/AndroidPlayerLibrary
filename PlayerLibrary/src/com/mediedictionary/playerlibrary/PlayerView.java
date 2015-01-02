@@ -1,18 +1,19 @@
 package com.mediedictionary.playerlibrary;
 
+import java.util.Locale;
+
 import org.videolan.libvlc.EventHandler;
 import org.videolan.libvlc.IVideoPlayer;
 import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.LibVlcException;
 import org.videolan.libvlc.LibVlcUtil;
+import org.videolan.vlc.util.WeakHandler;
 
-import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
-import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
@@ -23,17 +24,20 @@ import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.widget.FrameLayout;
 
-public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.Handler.Callback {
+public class PlayerView extends FrameLayout implements IVideoPlayer {
 
 	private static final String TAG = "PlayerView";
 
 	public interface OnChangeListener {
-		public void OnLoadComplet();
 
-		public void OnError();
+		public void onBufferChanged(float buffer);
+
+		public void onLoadComplet();
+
+		public void onError();
+
+		public void onEnd();
 	}
-
-	private static final int SURFACE_SIZE = 0;
 
 	private static final int SURFACE_BEST_FIT = 0;
 	private static final int SURFACE_FIT_HORIZONTAL = 1;
@@ -46,11 +50,15 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 
 	private LibVLC mLibVLC;
 
+	// Whether fallback from HW acceleration to SW decoding was done.
+	private boolean mDisabledHardwareAcceleration = false;
+	private int mPreviousHardwareAccelerationMode;
+
 	private SurfaceView mSurface;
-	private SurfaceView mSubtitlesSurface;
+	//private SurfaceView mSubtitlesSurface;
 
 	private SurfaceHolder mSurfaceHolder;
-	private SurfaceHolder mSubtitlesSurfaceHolder;
+	//private SurfaceHolder mSubtitlesSurfaceHolder;
 
 	private FrameLayout mSurfaceFrame;
 
@@ -63,13 +71,10 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 	private int mSarDen;
 
 	private Handler mHandler;
-
-	OnChangeListener mOnChangeListener;
+	private OnChangeListener mOnChangeListener;
 	private boolean mCanSeek = false;
 
-	public void setOnChangeListener(OnChangeListener listener) {
-		mOnChangeListener = listener;
-	}
+	private String url;
 
 	public PlayerView(Context context) {
 		super(context);
@@ -91,48 +96,44 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 		init();
 	}
 
-	public void setDataSource(String url) {
+	public void initPlayer(String url) {
+		try {
+			mLibVLC.init(getContext().getApplicationContext());
+		} catch (LibVlcException e) {
+			throw new RuntimeException("PlayerView Init Failed");
+		}
 		mLibVLC.getMediaList().clear();
 		mLibVLC.getMediaList().add(url);
+		this.url = url;
 	}
 
-	@SuppressLint({ "InlinedApi", "NewApi" })
 	private void init() {
 		try {
 			mLibVLC = LibVLC.getExistingInstance();
 			if (mLibVLC == null) {
 				mLibVLC = LibVLC.getInstance();
-				mLibVLC.init(getContext().getApplicationContext());
-				EventHandler.getInstance().addHandler(eventHandler);
 			}
 		} catch (LibVlcException e) {
-			Log.e(TAG, "init failed", e);
-			return;
+			throw new RuntimeException("PlayerView Init Failed");
 		}
 
 		LayoutInflater.from(getContext()).inflate(R.layout.view_player, this);
-		mHandler = new Handler(this);
+		mHandler = new Handler();
 
+		//video view
 		mSurface = (SurfaceView) findViewById(R.id.player_surface);
 		mSurfaceHolder = mSurface.getHolder();
 		mSurfaceHolder.addCallback(mSurfaceCallback);
+		mSurfaceHolder.setFormat(PixelFormat.RGBX_8888);
+
+		//Subtitles view
+		//mSubtitlesSurface = (SurfaceView) findViewById(R.id.subtitles_surface);
+		//mSubtitlesSurfaceHolder = mSubtitlesSurface.getHolder();
+		//mSubtitlesSurface.setZOrderMediaOverlay(true);
+		//mSubtitlesSurfaceHolder.setFormat(PixelFormat.RGBA_8888);
+		//mSubtitlesSurfaceHolder.addCallback(mSubtitlesSurfaceCallback);
+
 		mSurfaceFrame = (FrameLayout) findViewById(R.id.player_surface_frame);
-
-		String chroma = "";// mSettings.getString("chroma_format", "");
-		if (LibVlcUtil.isGingerbreadOrLater() && chroma.equals("YV12")) {
-			mSurfaceHolder.setFormat(ImageFormat.YV12);
-		} else if (chroma.equals("RV16")) {
-			mSurfaceHolder.setFormat(PixelFormat.RGB_565);
-		} else {
-			mSurfaceHolder.setFormat(PixelFormat.RGBX_8888);
-		}
-
-		mSubtitlesSurface = (SurfaceView) findViewById(R.id.subtitles_surface);
-		mSubtitlesSurfaceHolder = mSubtitlesSurface.getHolder();
-		mSubtitlesSurfaceHolder.setFormat(PixelFormat.RGBA_8888);
-		mSubtitlesSurface.setZOrderMediaOverlay(true);
-		mSurfaceHolder.addCallback(mSurfaceCallback);
-		mSubtitlesSurfaceHolder.addCallback(mSubtitlesSurfaceCallback);
 	}
 
 	private final SurfaceHolder.Callback mSurfaceCallback = new Callback() {
@@ -162,6 +163,7 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 		}
 	};
 
+	@SuppressWarnings("unused")
 	private final SurfaceHolder.Callback mSubtitlesSurfaceCallback = new Callback() {
 		@Override
 		public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
@@ -182,9 +184,9 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 
 	@Override
 	public void setSurfaceSize(int width, int height, int visible_width, int visible_height, int sar_num, int sar_den) {
-		if (width * height == 0)
+		if (width * height == 0) {
 			return;
-
+		}
 		// store video size
 		mVideoHeight = height;
 		mVideoWidth = width;
@@ -192,48 +194,36 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 		mVideoVisibleWidth = visible_width;
 		mSarNum = sar_num;
 		mSarDen = sar_den;
-		Message msg = mHandler.obtainMessage(SURFACE_SIZE);
-		mHandler.sendMessage(msg);
+		mHandler.post(new Runnable() {
+			@Override
+			public void run() {
+				changeSurfaceSize();
+			}
+		});
 	}
 
-	@Override
-	public boolean handleMessage(Message arg0) {
-		switch (arg0.what) {
-		case SURFACE_SIZE:
-			changeSurfaceSize();
-			break;
-
-		default:
-			break;
-		}
-		return false;
+	public void setOnChangeListener(OnChangeListener listener) {
+		mOnChangeListener = listener;
 	}
 
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 	public void changeSurfaceSize() {
 		int sw;
 		int sh;
-
 		// get screen size
 		sw = getWidth();
 		sh = getHeight();
-
 		double dw = sw, dh = sh;
 		boolean isPortrait;
-
 		isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
-
 		if (sw > sh && isPortrait || sw < sh && !isPortrait) {
 			dw = sh;
 			dh = sw;
 		}
-
 		// sanity check
 		if (dw * dh == 0 || mVideoWidth * mVideoHeight == 0) {
 			Log.e(TAG, "Invalid surface size");
 			return;
 		}
-
 		// compute the aspect ratio
 		double ar, vw;
 		if (mSarDen == mSarNum) {
@@ -285,27 +275,27 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 		}
 
 		SurfaceView surface;
-		SurfaceView subtitlesSurface;
+		//SurfaceView subtitlesSurface;
 		SurfaceHolder surfaceHolder;
-		SurfaceHolder subtitlesSurfaceHolder;
+		//SurfaceHolder subtitlesSurfaceHolder;
 		FrameLayout surfaceFrame;
 
 		surface = mSurface;
-		subtitlesSurface = mSubtitlesSurface;
+		//subtitlesSurface = mSubtitlesSurface;
 		surfaceHolder = mSurfaceHolder;
-		subtitlesSurfaceHolder = mSubtitlesSurfaceHolder;
+		//subtitlesSurfaceHolder = mSubtitlesSurfaceHolder;
 		surfaceFrame = mSurfaceFrame;
 
 		// force surface buffer size
 		surfaceHolder.setFixedSize(mVideoWidth, mVideoHeight);
-		subtitlesSurfaceHolder.setFixedSize(mVideoWidth, mVideoHeight);
+		//subtitlesSurfaceHolder.setFixedSize(mVideoWidth, mVideoHeight);
 
 		// set display size
 		android.view.ViewGroup.LayoutParams lp = surface.getLayoutParams();
 		lp.width = (int) Math.ceil(dw * mVideoWidth / mVideoVisibleWidth);
 		lp.height = (int) Math.ceil(dh * mVideoHeight / mVideoVisibleHeight);
 		surface.setLayoutParams(lp);
-		subtitlesSurface.setLayoutParams(lp);
+		//subtitlesSurface.setLayoutParams(lp);
 
 		// set frame size (crop if necessary)
 		lp = surfaceFrame.getLayoutParams();
@@ -314,12 +304,40 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 		surfaceFrame.setLayoutParams(lp);
 
 		surface.invalidate();
-		subtitlesSurface.invalidate();
+		//subtitlesSurface.invalidate();
+
+	}
+
+	public void eventHardwareAccelerationError() {
+		EventHandler em = EventHandler.getInstance();
+		em.callback(EventHandler.HardwareAccelerationError, new Bundle());
+	}
+
+	private void handleHardwareAccelerationError() {
+		mLibVLC.stop();
+		mDisabledHardwareAcceleration = true;
+		mPreviousHardwareAccelerationMode = mLibVLC.getHardwareAcceleration();
+		mLibVLC.setHardwareAcceleration(LibVLC.HW_ACCELERATION_DISABLED);
+		start();
 	}
 
 	public void start() {
+		mLibVLC.eventVideoPlayerActivityCreated(true);
+		EventHandler.getInstance().addHandler(eventHandler);
 		mLibVLC.playIndex(0);
 		mSurface.setKeepScreenOn(true);
+
+		/* WARNING: hack to avoid a crash in mediacodec on KitKat.
+		 * Disable hardware acceleration if the media has a ts extension. */
+		if (LibVlcUtil.isKitKatOrLater()) {
+			String locationLC = url.toLowerCase(Locale.ENGLISH);
+			if (locationLC.endsWith(".ts") || locationLC.endsWith(".tts") || locationLC.endsWith(".m2t") || locationLC.endsWith(".mts")
+					|| locationLC.endsWith(".m2ts")) {
+				mDisabledHardwareAcceleration = true;
+				mPreviousHardwareAccelerationMode = mLibVLC.getHardwareAcceleration();
+				mLibVLC.setHardwareAcceleration(LibVLC.HW_ACCELERATION_DISABLED);
+			}
+		}
 	};
 
 	public void play() {
@@ -335,6 +353,13 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 	public void stop() {
 		mLibVLC.stop();
 		mSurface.setKeepScreenOn(false);
+		EventHandler em = EventHandler.getInstance();
+		em.removeHandler(eventHandler);
+		// MediaCodec opaque direct rendering should not be used anymore since there is no surface to attach.
+		mLibVLC.eventVideoPlayerActivityCreated(false);
+		if (mDisabledHardwareAcceleration) {
+			mLibVLC.setHardwareAcceleration(mPreviousHardwareAccelerationMode);
+		}
 	}
 
 	public long getTime() {
@@ -358,7 +383,7 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 	}
 
 	public boolean canSeekable() {
-		return true;//mCanSeek;
+		return mCanSeek;
 	}
 
 	public boolean isPlaying() {
@@ -383,7 +408,7 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 
 	public void seek(int delta) {
 		// unseekable stream
-		if (mLibVLC.getLength() <= 0 /*|| !mCanSeek*/)
+		if (mLibVLC.getLength() <= 0 || !mCanSeek)
 			return;
 
 		long position = mLibVLC.getTime() + delta;
@@ -392,20 +417,31 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 		mLibVLC.setTime(position);
 	}
 
-	private Handler eventHandler = new Handler(new android.os.Handler.Callback() {
+	private final Handler eventHandler = new VideoPlayerHandler(this);
+
+	private static class VideoPlayerHandler extends WeakHandler<PlayerView> {
+		public VideoPlayerHandler(PlayerView owner) {
+			super(owner);
+		}
 
 		@Override
-		public boolean handleMessage(Message msg) {
-			//if (exited)
-			//	return;
+		public void handleMessage(Message msg) {
+			PlayerView playerView = getOwner();
+			if (playerView == null)
+				return;
+
 			switch (msg.getData().getInt("event")) {
+			case EventHandler.MediaPlayerNothingSpecial:
+				break;
+			case EventHandler.MediaPlayerOpening:
+				break;
 			case EventHandler.MediaParsedChanged:
 				Log.d(TAG, "MediaParsedChanged");
 				break;
 			case EventHandler.MediaPlayerPlaying:
-				Log.d(TAG, "MediaPlayerPlaying");
-				if (mOnChangeListener != null) {
-					mOnChangeListener.OnLoadComplet();
+				Log.d(TAG, "MediaPlayerPlaying:");
+				if (playerView.mOnChangeListener != null) {
+					playerView.mOnChangeListener.onLoadComplet();
 				}
 				break;
 			case EventHandler.MediaPlayerPaused:
@@ -416,31 +452,44 @@ public class PlayerView extends FrameLayout implements IVideoPlayer, android.os.
 				break;
 			case EventHandler.MediaPlayerEndReached:
 				Log.d(TAG, "MediaPlayerEndReached");
+				if (playerView.mOnChangeListener != null) {
+					playerView.mOnChangeListener.onEnd();
+				}
 				break;
 			case EventHandler.MediaPlayerVout:
 				break;
 			case EventHandler.MediaPlayerPositionChanged:
-				if (!mCanSeek) {
-					mCanSeek = true;
+				if (!playerView.mCanSeek) {
+					playerView.mCanSeek = true;
 				}
 				break;
 			case EventHandler.MediaPlayerEncounteredError:
 				Log.d(TAG, "MediaPlayerEncounteredError");
-				if (mOnChangeListener != null) {
-					mOnChangeListener.OnError();
+				if (playerView.mOnChangeListener != null) {
+					playerView.mOnChangeListener.onError();
 				}
 				break;
 			case EventHandler.HardwareAccelerationError:
 				Log.d(TAG, "HardwareAccelerationError");
+				if (playerView.mOnChangeListener != null && playerView.mDisabledHardwareAcceleration) {
+					playerView.stop();
+					playerView.mOnChangeListener.onError();
+				} else {
+					playerView.handleHardwareAccelerationError();
+				}
 				break;
 			case EventHandler.MediaPlayerTimeChanged:
 				// avoid useless error logs
+				break;
+			case EventHandler.MediaPlayerBuffering:
+				if (playerView.mOnChangeListener != null) {
+					playerView.mOnChangeListener.onBufferChanged(msg.getData().getFloat("data"));
+				}
 				break;
 			default:
 				Log.d(TAG, String.format("Event not handled (0x%x)", msg.getData().getInt("event")));
 				break;
 			}
-			return false;
 		}
-	});
+	};
 }

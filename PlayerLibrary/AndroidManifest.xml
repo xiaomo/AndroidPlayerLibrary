@@ -37,7 +37,6 @@
         <activity
             android:name="com.mediedictionary.playerlibrary.PlayerActivity"
             android:configChanges="orientation|screenSize"
-            android:launchMode="standard"
             android:label="@string/app_name" />
     </application>
 

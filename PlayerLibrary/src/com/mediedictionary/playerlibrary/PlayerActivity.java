@@ -17,7 +17,6 @@ import android.view.View.OnClickListener;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
-import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
@@ -29,14 +28,15 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 
 	private static final int SHOW_PROGRESS = 0;
 	private static final int ON_LOADED = 1;
+	private static final int HIDE_OVERLAY = 2;
 
-	private ProgressBar pbLoading;
+	private View rlLoading;
 	private PlayerView mPlayerView;
 	private String mUrl;
-	private TextView tvTime, tvLength;
+	private TextView tvTitle, tvBuffer, tvTime, tvLength;
 	private SeekBar sbVideo;
 	private ImageButton ibLock, ibFarward, ibBackward, ibPlay, ibSize;
-	private View llOverlay;
+	private View llOverlay, rlOverlayTitle;
 	private Handler mHandler;
 
 	@Override
@@ -54,6 +54,7 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 
 		mHandler = new Handler(this);
 
+		tvTitle = (TextView) findViewById(R.id.tv_title);
 		tvTime = (TextView) findViewById(R.id.tv_time);
 		tvLength = (TextView) findViewById(R.id.tv_length);
 		sbVideo = (SeekBar) findViewById(R.id.sb_video);
@@ -68,15 +69,33 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 		ibFarward.setOnClickListener(this);
 		ibSize = (ImageButton) findViewById(R.id.ib_size);
 		ibSize.setOnClickListener(this);
-		llOverlay = findViewById(R.id.ll_overlay);
 
-		pbLoading = (ProgressBar) findViewById(R.id.pb_loading);
-		//pbLoading.setVisibility(View.VISIBLE);
+		llOverlay = findViewById(R.id.ll_overlay);
+		rlOverlayTitle = findViewById(R.id.rl_title);
+
+		rlLoading = findViewById(R.id.rl_loading);
+		tvBuffer = (TextView) findViewById(R.id.tv_buffer);
+		//使用步骤
+		//第一步 ：通过findViewById或者new PlayerView()得到mPlayerView对象
+		//mPlayerView= new PlayerView(PlayerActivity.this);
 		mPlayerView = (PlayerView) findViewById(R.id.pv_video);
-		mPlayerView.setDataSource(mUrl);
+
+		//第二步：设置参数，毫秒为单位
+		//mPlayerView.setNetWorkCache(20000);
+
+		//第三步:初始化播放器
+		mPlayerView.initPlayer(mUrl);
+
+		//第四步:设置事件监听，监听缓冲进度等
 		mPlayerView.setOnChangeListener(this);
+
+		//第五步：开始播放
 		mPlayerView.start();
-		showOverlay();
+
+		//init view
+		tvTitle.setText(mUrl);
+		showLoading();
+		hideOverlay();
 	}
 
 	@Override
@@ -99,6 +118,7 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 
 	@Override
 	public void onPause() {
+		hideOverlay();
 		mPlayerView.stop();
 		super.onPause();
 	}
@@ -106,16 +126,46 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 	@Override
 	public void onResume() {
 		super.onResume();
+
 	}
 
 	@Override
-	public void OnLoadComplet() {
+	protected void onDestroy() {
+		super.onDestroy();
+	}
+
+	@Override
+	public void onBufferChanged(float buffer) {
+		if (buffer >= 100) {
+			hideLoading();
+		} else {
+			showLoading();
+		}
+		tvBuffer.setText("正在缓冲中..." + (int) buffer + "%");
+	}
+
+	private void showLoading() {
+		rlLoading.setVisibility(View.VISIBLE);
+
+	}
+
+	private void hideLoading() {
+		rlLoading.setVisibility(View.GONE);
+	}
+
+	@Override
+	public void onLoadComplet() {
 		mHandler.sendEmptyMessage(ON_LOADED);
 	}
 
 	@Override
-	public void OnError() {
-		Toast.makeText(getApplicationContext(), "PlayerView Error", Toast.LENGTH_SHORT).show();
+	public void onError() {
+		Toast.makeText(getApplicationContext(), "Player Error Occur！", Toast.LENGTH_SHORT).show();
+		finish();
+	}
+
+	@Override
+	public void onEnd() {
 		finish();
 	}
 
@@ -148,11 +198,15 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 	}
 
 	private void showOverlay() {
+		rlOverlayTitle.setVisibility(View.VISIBLE);
 		llOverlay.setVisibility(View.VISIBLE);
 		mHandler.sendEmptyMessage(SHOW_PROGRESS);
+		mHandler.removeMessages(HIDE_OVERLAY);
+		mHandler.sendEmptyMessageDelayed(HIDE_OVERLAY, 5 * 1000);
 	}
 
 	private void hideOverlay() {
+		rlOverlayTitle.setVisibility(View.GONE);
 		llOverlay.setVisibility(View.GONE);
 		mHandler.removeMessages(SHOW_PROGRESS);
 	}
@@ -163,30 +217,17 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 		}
 		int time = (int) mPlayerView.getTime();
 		int length = (int) mPlayerView.getLength();
-		//		if (length == 0) {
-		//			Media media = MediaDatabase.getInstance().getMedia(mLocation);
-		//			if (media != null)
-		//				length = (int) media.getLength();
-		//		}
-		//
-		//		// Update all view elements
-		//		boolean isSeekable = mEnableJumpButtons && length > 0;
-		//		mBackward.setVisibility(isSeekable ? View.VISIBLE : View.GONE);
-		//		mForward.setVisibility(isSeekable ? View.VISIBLE : View.GONE);
+		boolean isSeekable = mPlayerView.canSeekable() && length > 0;
+		ibFarward.setVisibility(isSeekable ? View.VISIBLE : View.GONE);
+		ibBackward.setVisibility(isSeekable ? View.VISIBLE : View.GONE);
 		sbVideo.setMax(length);
 		sbVideo.setProgress(time);
-		//		if (mSysTime != null)
-		//			mSysTime.setText(DateFormat.getTimeFormat(this).format(new Date(System.currentTimeMillis())));
-		if (time >= 0)
+		if (time >= 0) {
 			tvTime.setText(millisToString(time, false));
-		if (length >= 0)
+		}
+		if (length >= 0) {
 			tvLength.setText(millisToString(length, false));
-
-		//		if (mPlayerView.isPlaying()) {
-		//			ibPlay.setBackgroundResource(R.drawable.ic_pause);
-		//		} else {
-		//			ibPlay.setBackgroundResource(R.drawable.ic_play);
-		//		}
+		}
 		return time;
 	}
 
@@ -217,9 +258,11 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 			break;
 		case ON_LOADED:
 			showOverlay();
-			pbLoading.setVisibility(View.GONE);
+			hideLoading();
 			break;
-
+		case HIDE_OVERLAY:
+			hideOverlay();
+			break;
 		default:
 			break;
 		}
