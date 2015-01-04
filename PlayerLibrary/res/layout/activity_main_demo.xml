@@ -2,20 +2,42 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical" >
+
     <TextView
         android:id="@+id/android:title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="#FF0000FF"
         android:layout_marginBottom="10dp"
-        android:text="库两种使用方式:\r\n\r\n    第一种，直接new一个PlayerView或者在布局文件的xml里面嵌入view。\r\n\r\n    第二种，跳转到一个写好的播放页面PlayerActivity\r\n\r\n(本地文件参数格式：file:///sacard/test.rmvb。测试下列地址请保持网络畅通)：" />
+        android:text="库两种使用方式:\r\n    第一种，直接new一个PlayerView或者在布局文件的xml里面嵌入view。\r\n    第二种，跳转到一个写好的播放页面PlayerActivity\r\n(本地文件参数格式：file:///sacard/test.rmvb。测试下列地址请保持网络畅通)："
+        android:textColor="#FF0000FF" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <EditText
+            android:id="@+id/et_url"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/btn_play"
+            android:hint="请输入播放地址"
+            android:text="播放"
+            android:layout_width="60dp"
+            android:layout_height="42dp" />
+    </LinearLayout>
+
     <ListView
         android:id="@id/android:list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:drawSelectorOnTop="false" />
+
     <TextView
         android:id="@id/android:empty"
         android:layout_width="match_parent"
@@ -23,4 +45,5 @@
         android:gravity="center_vertical|center_horizontal"
         android:text="No data"
         android:textColor="#FF0000" />
+
 </LinearLayout>

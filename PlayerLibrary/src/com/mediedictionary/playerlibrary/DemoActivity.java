@@ -3,18 +3,26 @@ package com.mediedictionary.playerlibrary;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ListActivity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 
 public class DemoActivity extends ListActivity implements OnItemClickListener {
 
 	List<String> items;
+	ArrayAdapter<String> adapter;
 
+	@SuppressLint("SdCardPath")
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -26,14 +34,31 @@ public class DemoActivity extends ListActivity implements OnItemClickListener {
 		items.add("rtmp://183.129.244.168/weipai/s1");
 		items.add("file:///sdcard/mix.mp4");
 
-		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items);
+		//read data
+		SharedPreferences mySharedPreferences = getSharedPreferences("test", Activity.MODE_PRIVATE);
+		((EditText) findViewById(R.id.et_url)).setText(mySharedPreferences.getString("url", ""));
+
+		adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items);
 		setListAdapter(adapter);
 		getListView().setOnItemClickListener(this);
-	}
 
-	@Override
-	protected void onResume() {
-		super.onResume();
+		findViewById(R.id.btn_play).setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View view) {
+				String url = ((EditText) findViewById(R.id.et_url)).getText().toString().trim();
+				if (!TextUtils.isEmpty(url)) {
+					startActivity(new Intent(DemoActivity.this, PlayerActivity.class).putExtra("url", url));
+				}
+
+				//save data
+				SharedPreferences mySharedPreferences = getSharedPreferences("test", Activity.MODE_PRIVATE);
+				SharedPreferences.Editor editor = mySharedPreferences.edit();
+				editor.putString("url", ((EditText) findViewById(R.id.et_url)).getText().toString().trim());
+				editor.commit();
+
+			}
+		});
 	}
 
 	@Override

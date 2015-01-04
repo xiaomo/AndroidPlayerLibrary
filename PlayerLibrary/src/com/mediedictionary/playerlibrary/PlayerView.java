@@ -442,7 +442,7 @@ public class PlayerView extends FrameLayout implements IVideoPlayer {
 				Log.d(TAG, "MediaParsedChanged");
 				break;
 			case EventHandler.MediaPlayerPlaying:
-				Log.d(TAG, "MediaPlayerPlaying:");
+				Log.d(TAG, "MediaPlayerPlaying");
 				if (playerView.mOnChangeListener != null) {
 					playerView.mOnChangeListener.onLoadComplet();
 				}
@@ -485,6 +485,7 @@ public class PlayerView extends FrameLayout implements IVideoPlayer {
 				// avoid useless error logs
 				break;
 			case EventHandler.MediaPlayerBuffering:
+				Log.d(TAG, "MediaPlayerBuffering");
 				if (playerView.mOnChangeListener != null) {
 					playerView.mOnChangeListener.onBufferChanged(msg.getData().getFloat("data"));
 				}

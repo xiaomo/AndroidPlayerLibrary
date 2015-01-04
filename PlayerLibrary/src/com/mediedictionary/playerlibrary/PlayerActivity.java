@@ -254,7 +254,7 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 		switch (msg.what) {
 		case SHOW_PROGRESS:
 			setOverlayProgress();
-			mHandler.sendEmptyMessageDelayed(SHOW_PROGRESS, 500);
+			mHandler.sendEmptyMessageDelayed(SHOW_PROGRESS, 20);
 			break;
 		case ON_LOADED:
 			showOverlay();
@@ -272,7 +272,7 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 	private String millisToString(long millis, boolean text) {
 		boolean negative = millis < 0;
 		millis = java.lang.Math.abs(millis);
-		//int mini_sec = (int) millis % 1000;
+		int mini_sec = (int) millis % 1000;
 		millis /= 1000;
 		int sec = (int) (millis % 60);
 		millis /= 60;
@@ -283,6 +283,9 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 		String time;
 		DecimalFormat format = (DecimalFormat) NumberFormat.getInstance(Locale.US);
 		format.applyPattern("00");
+
+		DecimalFormat format2 = (DecimalFormat) NumberFormat.getInstance(Locale.US);
+		format2.applyPattern("000");
 		if (text) {
 			if (millis > 0)
 				time = (negative ? "-" : "") + hours + "h" + format.format(min) + "min";
@@ -292,9 +295,9 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 				time = (negative ? "-" : "") + sec + "s";
 		} else {
 			if (millis > 0)
-				time = (negative ? "-" : "") + hours + ":" + format.format(min) + ":" + format.format(sec);//+ ":" + format.format(mini_sec);
+				time = (negative ? "-" : "") + hours + ":" + format.format(min) + ":" + format.format(sec) + ":" + format2.format(mini_sec);
 			else
-				time = (negative ? "-" : "") + min + ":" + format.format(sec);// + ":" + format.format(mini_sec);
+				time = (negative ? "-" : "") + min + ":" + format.format(sec) + ":" + format2.format(mini_sec);
 		}
 		return time;
 	}
