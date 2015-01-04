@@ -81,7 +81,7 @@ public class PlayerActivity extends Activity implements OnChangeListener, OnClic
 		mPlayerView = (PlayerView) findViewById(R.id.pv_video);
 
 		//第二步：设置参数，毫秒为单位
-		//mPlayerView.setNetWorkCache(20000);
+		mPlayerView.setNetWorkCache(20000);
 
 		//第三步:初始化播放器
 		mPlayerView.initPlayer(mUrl);

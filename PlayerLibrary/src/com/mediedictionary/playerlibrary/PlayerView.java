@@ -327,8 +327,10 @@ public class PlayerView extends FrameLayout implements IVideoPlayer {
 		mLibVLC.playIndex(0);
 		mSurface.setKeepScreenOn(true);
 
-		/* WARNING: hack to avoid a crash in mediacodec on KitKat.
-		 * Disable hardware acceleration if the media has a ts extension. */
+		/*
+		 * WARNING: hack to avoid a crash in mediacodec on KitKat. Disable
+		 * hardware acceleration if the media has a ts extension.
+		 */
 		if (LibVlcUtil.isKitKatOrLater()) {
 			String locationLC = url.toLowerCase(Locale.ENGLISH);
 			if (locationLC.endsWith(".ts") || locationLC.endsWith(".tts") || locationLC.endsWith(".m2t") || locationLC.endsWith(".mts")
@@ -360,6 +362,7 @@ public class PlayerView extends FrameLayout implements IVideoPlayer {
 		if (mDisabledHardwareAcceleration) {
 			mLibVLC.setHardwareAcceleration(mPreviousHardwareAccelerationMode);
 		}
+		mLibVLC.destroy();
 	}
 
 	public long getTime() {
