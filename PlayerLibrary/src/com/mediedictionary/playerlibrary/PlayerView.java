@@ -340,6 +340,11 @@ public class PlayerView extends FrameLayout implements IVideoPlayer {
 				mLibVLC.setHardwareAcceleration(LibVLC.HW_ACCELERATION_DISABLED);
 			}
 		}
+		
+		//关闭硬件加速
+		mDisabledHardwareAcceleration = true;
+		mPreviousHardwareAccelerationMode = mLibVLC.getHardwareAcceleration();
+		mLibVLC.setHardwareAcceleration(LibVLC.HW_ACCELERATION_DISABLED);
 	};
 
 	public void play() {
