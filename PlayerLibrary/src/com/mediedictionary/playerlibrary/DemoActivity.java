@@ -33,7 +33,9 @@ public class DemoActivity extends ListActivity implements OnItemClickListener {
 		items.add("rtmp://lm01.everyon.tv:1935/ptv/pld852");
 		items.add("rtmp://183.129.244.168/weipai/s1");
 		items.add("file:///sdcard/mix.mp4");
-
+		items.add("file:///sdcard/DCIM/Camera/VID_20150128_155555.mp4");
+		items.add("file:///sdcard/mix/1.mp4");
+		items.add("http://img1.peiyinxiu.com/2015020312092f84a6085b34dc7c.mp4");
 		//read data
 		SharedPreferences mySharedPreferences = getSharedPreferences("test", Activity.MODE_PRIVATE);
 		((EditText) findViewById(R.id.et_url)).setText(mySharedPreferences.getString("url", ""));
