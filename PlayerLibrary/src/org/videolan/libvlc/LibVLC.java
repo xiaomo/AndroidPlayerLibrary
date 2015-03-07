@@ -72,7 +72,7 @@ public class LibVLC {
     /** Settings */
     private int hardwareAcceleration = HW_ACCELERATION_AUTOMATIC;
     private String subtitlesEncoding = "";
-    private int aout = LibVlcUtil.isGingerbreadOrLater() ? AOUT_OPENSLES : AOUT_AUDIOTRACK_JAVA;
+    private int aout = AOUT_AUDIOTRACK_JAVA;//LibVlcUtil.isGingerbreadOrLater() ? AOUT_OPENSLES : AOUT_AUDIOTRACK_JAVA;
     private int vout = VOUT_ANDROID_SURFACE;
     private boolean timeStretching = false;
     private int deblocking = -1;
